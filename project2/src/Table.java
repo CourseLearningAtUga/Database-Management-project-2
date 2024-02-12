@@ -429,33 +429,48 @@ public class Table
         List <Comparable []> rows = new ArrayList <> ();
 
         //  T O   B E   I M P L E M E N T E D
-        for(int i=0;i<tuples.size();i++){
-            var currMain=tuples.get(i);
-            boolean ispresent_intable2=false;
 
-            for(int j=0;j<table2.tuples.size();j++){
-                var currSecondary=table2.tuples.get(j);
-                boolean currentsecondrow_issame_as_first=true;
-                for(int k=0;k<currMain.length;k++){
-                    if(!currMain[k].equals(currSecondary[k])) {
-                        currentsecondrow_issame_as_first = false;
+        // If either table does not use indexing, fall back to regular iteration
+        if (mType == MapType.NO_MAP || table2.mType == MapType.NO_MAP) {
+            for (int i = 0; i < tuples.size(); i++) {
+                var currMain = tuples.get(i);
+                boolean isPresentInTable2 = false;
+
+                for (int j = 0; j < table2.tuples.size(); j++) {
+                    var currSecondary = table2.tuples.get(j);
+                    boolean currentSecondRowIsSameAsFirst = true;
+                    for (int k = 0; k < currMain.length; k++) {
+                        if (!currMain[k].equals(currSecondary[k])) {
+                            currentSecondRowIsSameAsFirst = false;
+                            break;
+                        }
+                    }
+                    if (currentSecondRowIsSameAsFirst) {
+                        isPresentInTable2 = true;
                         break;
                     }
                 }
-                if(currentsecondrow_issame_as_first){
-                    ispresent_intable2=true;
-                    break;
+
+                if (!isPresentInTable2) {
+                    rows.add(currMain.clone());
                 }
             }
+        } else {
+            // If both tables use indexing, iterate through the keys of the index
+            for (var entry : index.entrySet()) {
+                Comparable[] currMain = entry.getValue();
+                Comparable[] currSecondary = table2.index.get(entry.getKey());
 
-            if(!ispresent_intable2){
-                rows.add(currMain.clone());
+                // Check if the row exists in table2's index
+                if (currSecondary == null || !Arrays.equals(currMain, currSecondary)) {
+                    rows.add(currMain); // Add to result if not found in table2
+                }
             }
-
-
         }
+
         return new Table (name + count++, attribute, domain, key, rows);
     } // minus
+
 
     /************************************************************************************
      * Join this table and table2 by performing an "equi-join".  Tuples from both tables
