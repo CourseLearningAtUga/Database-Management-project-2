@@ -21,6 +21,7 @@
 import java.io.*;
 import java.lang.reflect.Array;
 import java.util.*;
+import java.util.function.Consumer;
 
 import static java.lang.Math.ceil;
 import static java.lang.System.out;
@@ -255,9 +256,61 @@ public class BpTreeMap <K extends Comparable <K>, V>
         var enSet = new HashSet <Map.Entry <K, V>> ();
 
         //  T O   B E   I M P L E M E N T E D
-            
+        // Iterate through the tree and add entries
+        populateEntrySet(root, enSet);
+//        // Initialize the lambda expression variable
+//        Consumer<Node> populateEntrySet = null;
+//
+//        // Lambda expression to populate the entry set recursively
+//        Consumer<Node> finalPopulateEntrySet = populateEntrySet;
+//        populateEntrySet = node -> {
+//            if (node == null)
+//                return;
+//
+//            // Traverse the node
+//            for (int i = 0; i < node.keys; i++) {
+//                // If it's a leaf, add entries
+//                if (node.isLeaf) {
+//                    enSet.add(new AbstractMap.SimpleEntry<>(node.key[i], (V) node.ref[i + 1]));
+//                } else {
+//                    // Recursive call for internal nodes
+//                    finalPopulateEntrySet.accept((Node) node.ref[i]);
+//                }
+//            }
+//
+//            // Recursive call for the last child of internal node
+//            if (!node.isLeaf) {
+//                finalPopulateEntrySet.accept((Node) node.ref[node.keys]);
+//            }
+//        };
+//
+//        // Populate the entry set starting from the root node
+//        populateEntrySet.accept(root);
+
         return enSet;
     } // entrySet
+
+    // Helper method to populate the entry set recursively
+    private void populateEntrySet(BpTreeMap<K, V>.Node node, Set<Map.Entry<K, V>> entrySet) {
+        if (node == null)
+            return;
+
+        // Traverse the node
+        for (int i = 0; i < node.keys; i++) {
+            // If it's a leaf, add entries
+            if (node.isLeaf) {
+                entrySet.add(new AbstractMap.SimpleEntry<>(node.key[i], (V) node.ref[i + 1]));
+            } else {
+                // Recursive call for internal nodes
+                populateEntrySet((BpTreeMap<K, V>.Node) node.ref[i], entrySet);
+            }
+        }
+
+        // Recursive call for the last child of internal node
+        if (!node.isLeaf) {
+            populateEntrySet((BpTreeMap<K, V>.Node) node.ref[node.keys], entrySet);
+        }
+    }
 
     /********************************************************************************
      * Given the key, look up the value in the B+Tree map.
@@ -341,6 +394,18 @@ public class BpTreeMap <K extends Comparable <K>, V>
             if (DEBUG) out.println ("insert: handle internal node level");
 
                 //  T O   B E   I M P L E M E N T E D
+            // Check if split occurred in child node
+            if (rt != null) {
+                n.add(rt.key[0], rt);
+                if (n.overflow()) {
+                    rt = n.splitI();
+                    if (n == root) {
+                        root = new Node(root, rt.key[0], rt);      // make a new root
+                    } else {
+                        return rt;
+                    }
+                }
+            }
 
         } // if
 
@@ -375,6 +440,8 @@ public class BpTreeMap <K extends Comparable <K>, V>
         Node rt = null;                                               // holder for right sibling rt
 
                 //  T O   B E   I M P L E M E N T E D
+        n.add(k, v);                                                  // add into node n
+        if (n.overflow()) rt = n.splitI();
 
         return rt;
     } // addI
@@ -415,7 +482,7 @@ public class BpTreeMap <K extends Comparable <K>, V>
 
     /********************************************************************************
      * The main method used for testing.  Also test for more keys and with RANDOMLY true.
-     * @param  the command-line arguments (args[0] gives number of keys to insert)
+     * @param args the command-line arguments (args[0] gives number of keys to insert)
      */
     public static void main (String [] args)
     {
