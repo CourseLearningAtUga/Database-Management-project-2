@@ -127,7 +127,7 @@ public class Table
         attribute = _attribute;
         domain    = _domain;
         key       = _key;
-        tuples    = new ArrayList <> ();
+        tuples    = new FileList(_name, 300);
         index     = makeMap ();
         out.println("Index:"+ index);
     } // constructor
